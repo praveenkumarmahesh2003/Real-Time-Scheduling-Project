@@ -1,0 +1,136 @@
+import java.util.*;
+
+class Process {
+    int pid; // Process ID
+    int burstTime; // Burst time of the process
+    int arrivalTime; // Arrival time of the process
+    int remainingTime; // Remaining time for Round Robin scheduling
+    int priority; // Priority of the process
+    
+    public Process(int pid, int burstTime, int arrivalTime, int priority) {
+        this.pid = pid;
+        this.burstTime = burstTime;
+        this.arrivalTime = arrivalTime;
+        this.remainingTime = burstTime; // Initialize remaining time with burst time
+        this.priority = priority;
+    }
+    
+    public String toString() {
+        return "Process{" +
+                "pid=" + pid +
+                ", burstTime=" + burstTime +
+                ", arrivalTime=" + arrivalTime +
+                ", remainingTime=" + remainingTime +
+                ", priority=" + priority +
+                '}';
+    }
+}
+
+class Scheduler {
+    // First Come First Serve (FCFS) Scheduling
+    public void fifo(List<Process> processes) {
+        // Sort processes by arrival time
+        processes.sort(Comparator.comparingInt(p -> p.arrivalTime));
+        int currentTime = 0;
+        
+        for (Process process : processes) {
+            if (currentTime < process.arrivalTime) {
+                currentTime = process.arrivalTime; // Wait for the process to arrive
+            }
+            System.out.println("Process " + process.pid + " starts at " + currentTime);
+            
+            currentTime += process.burstTime; // Execute the process
+            
+            System.out.println("Process " + process.pid + " finishes at " + currentTime);
+        }
+    }
+
+    // Shortest Job First (SJF) Scheduling
+    public void sjf(List<Process> processes) {
+        // Priority queue to get the process with the shortest burst time
+        PriorityQueue<Process> queue = new PriorityQueue<>(Comparator.comparingInt(p -> p.burstTime));
+        int currentTime = 0;
+        int index = 0;
+        
+        while (index < processes.size() || !queue.isEmpty()) {
+            while (index < processes.size() && processes.get(index).arrivalTime <= currentTime) {
+                queue.add(processes.get(index));
+                index++;
+            }
+            if (!queue.isEmpty()) {
+                Process process = queue.poll();
+                System.out.println("Process " + process.pid + " starts at " + currentTime);
+                currentTime += process.burstTime; // Execute the process
+                System.out.println("Process " + process.pid + " finishes at " + currentTime);
+            } else {
+                currentTime++; // If no process is available, increment the current time
+            }
+        }
+    }
+
+    // Round Robin Scheduling
+    public void roundRobin(List<Process> processes, int quantum) {
+        Queue<Process> queue = new LinkedList<>();
+        int currentTime = 0;
+        int index = 0;
+        
+        while (index < processes.size() || !queue.isEmpty()) {
+            while (index < processes.size() && processes.get(index).arrivalTime <= currentTime) {
+                queue.add(processes.get(index));
+                index++;
+            }
+            
+            if (!queue.isEmpty()) {
+                Process process = queue.poll();
+                System.out.println("Process " + process.pid + " starts at " + currentTime);
+                if (process.remainingTime > quantum) {
+                    currentTime += quantum; // Execute the process for a quantum time
+                    process.remainingTime -= quantum;
+                    queue.add(process); // Re-add the process to the queue if it's not finished
+                } else {
+                    currentTime += process.remainingTime; // Execute the remaining time
+                    process.remainingTime = 0;
+                    System.out.println("Process " + process.pid + " finishes at " + currentTime);
+                }
+            } else {
+                currentTime++; // If no process is available, increment the current time
+            }
+        }
+    }
+
+    // Uni-programming Scheduling (Execute processes in their arrival order)
+    public void uniProgramming(List<Process> processes) {
+        for (Process process : processes) {
+            System.out.println("Process " + process.pid + " starts at " + process.arrivalTime);
+            System.out.println("Process " + process.pid + " finishes at " + (process.arrivalTime + process.burstTime));
+        }
+    }
+}
+
+class Main {
+    public static void main(String args[]) {
+        // Create a list of processes
+        List<Process> processes = new ArrayList<>();
+        processes.add(new Process(1, 4, 0, 1));
+        processes.add(new Process(2, 3, 5, 2));
+        processes.add(new Process(3, 2, 8, 3));
+
+        Scheduler scheduler = new Scheduler();
+        
+        // Execute FIFO scheduling
+        System.out.println("FIFO:");
+        scheduler.fifo(processes);
+
+        // Execute SJF scheduling
+        System.out.println("\nSJF:");
+        scheduler.sjf(processes);
+
+        // Execute Round Robin scheduling with a quantum of 2
+        System.out.println("\nRound Robin (Quantum = 2):");
+        scheduler.roundRobin(processes, 2);
+
+        // Execute Uni-programming scheduling
+        System.out.println("\nUni-programming:");
+        scheduler.uniProgramming(processes);
+    }
+}
